@@ -7,8 +7,41 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-02
+
+Primera versión publicada de HexaLite como paquete independiente, extraída y
+desacoplada de la aplicación donde nació.
+
+Sale como **0.1.0 y no como 1.0.0** a propósito: el framework es funcional y
+tiene suite de pruebas, pero todavía no se ha ejercitado a fondo en producción.
+Mientras la serie sea `0.x`, un cambio incompatible puede llegar en cualquier
+versión menor. Fija la dependencia con `^0.1` —que Composer resuelve como
+`>=0.1.0 <0.2.0`— para que no te suba de rama sin avisar.
+
 ### Added
 
+- Núcleo del framework bajo el namespace `HexaLite\`:
+  - **Router** por atributos (`#[Route]`, `#[Controller]`, `#[Middleware]`) con
+    rutas estáticas O(1), mega-regex para rutas dinámicas y caché en producción.
+  - **Container** de inyección de dependencias con autowiring y detección de
+    dependencias circulares.
+  - **DTOs autovalidados** (`HexaLite\Http\DTO\Dtos`) con 20 atributos de
+    validación declarativa y un `RuleEngine` compartido.
+  - **Request / Response / Body / Params** para HTTP síncrono (PHP-FPM).
+  - **Validación** nativa estilo Laravel vía `$request->validate()`.
+  - **Guards** y **Middlewares** por atributos, con soporte de throttling.
+  - **Logging** PSR-3 (`LoggerFactory` + `SimpleLogger`, Monolog opcional).
+  - **PDODatabase** para MySQL/PostgreSQL con prepared statements reales.
+- `Router::registerExceptionHandler()` para mapear excepciones de terceros
+  (p. ej. de una librería JWT) a respuestas HTTP sin acoplar el core.
+- `Router::handle()` devuelve la `Response` sin enviarla: permite tests
+  funcionales de extremo a extremo y embeber HexaLite en otros runtimes.
+  `dispatch()` es un envoltorio que la envía.
+- `Response::getCookies()` para inspeccionar las cookies encoladas.
+- Helpers globales agnósticos (`response()`, `env()`, `loadEnv()`, `url()`).
+- El `Container` **no depende de la extensión PECL `ext-ds`**: la detección de
+  ciclos usa un array nativo. El framework se instala sin extensiones PECL.
+- Suite de pruebas PHPUnit, workflow de CI (GitHub Actions) y ejemplos ejecutables.
 - **Kit de autenticación** (`HexaLite\Auth\`), listo para usar registrando
   `AuthServiceProvider`. Sin dependencias nuevas:
   - Alta, inicio de sesión con «recordarme», logout con revocación, refresco
@@ -73,59 +106,31 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
   alternativas con `|` y throttle, enchufado al ejemplo ejecutable de auth.
 - `.env.example` documentado y [`docs/FRONTEND.md`](docs/FRONTEND.md) con el
   contrato completo para el cliente.
+- **Ejemplo de arquitectura hexagonal por módulos**
+  (`examples/src/Modules/Informes/`), con su front controller
+  `examples/public/hexagonal.php`. Arranca sin base de datos y recorre el flujo
+  completo: puerto de salida en `Domain/Interfaces/`, tres adaptadores
+  intercambiables (memoria, fichero JSON y PDO), casos de uso que dependen solo
+  de la interfaz, reglas de negocio dentro de la entidad, excepciones de dominio
+  traducidas a HTTP con `registerExceptionHandler()` y un provider que cablea
+  todo en una sola línea. Incluye `tests/Examples/InformesHexagonalTest.php`,
+  que prueba las reglas del negocio sin base de datos, sin servidor y sin mocks.
 
-### Fixed
+### Notas sobre el historial previo
 
-- El Router **ignoraba la `Response` devuelta por un Guard**: al ser un objeto
-  truthy, un rechazo con respuesta propia (401/403) dejaba pasar la petición al
-  controlador. Ahora se respeta la respuesta del Guard.
-- El Router registraba en el log **todas** las `HttpException`, incluidas las de
-  control de flujo normal (401 de credenciales, 422 de enlace ya usado). Ahora
-  solo se registran las 5xx, que son las que indican un fallo real.
+Antes de esta versión, el CHANGELOG de este repositorio publicaba una sección
+`[1.0.0] - 2026-07-12` y otra `[Unreleased]` que **nunca se llegaron a
+etiquetar**: no existió ningún tag ni ninguna release, y el enlace de comparación
+`v1.0.0...HEAD` apuntaba a un tag inexistente. Todo aquel contenido es, en la
+práctica, esta `0.1.0`, y se consolidó aquí para que el historial no prometa
+versiones que nunca se publicaron.
 
-### Removed
+Por el mismo motivo esta versión no lleva secciones `Fixed` ni `Removed`: los
+arreglos que figuraban como pendientes (la `Response` de un Guard que el Router
+ignoraba, y el registro en el log de todas las `HttpException` en vez de solo las
+5xx) y la retirada de `HexaLite\Http\Domain\ThrottleStoreInterface` ocurrieron
+antes de que hubiera nada publicado. Forman parte de esta primera entrega y no
+corrigen ninguna versión anterior, porque no la hay.
 
-- `HexaLite\Http\Domain\ThrottleStoreInterface`: código muerto desde 1.0.0. El
-  `ThrottleGuard` cuenta sobre `CacheInterface` (Redis compartido o memoria), así
-  que nadie la implementaba ni la consumía. Si tenías un store propio, pásalo a
-  `CacheInterface`.
-
-## [1.0.0] - 2026-07-12
-
-Primera versión pública de HexaLite como paquete independiente, extraída y
-desacoplada de la aplicación donde nació.
-
-### Added
-- Núcleo del framework bajo el namespace `HexaLite\`:
-  - **Router** por atributos (`#[Route]`, `#[Controller]`, `#[Middleware]`) con
-    rutas estáticas O(1), mega-regex para rutas dinámicas y caché en producción.
-  - **Container** de inyección de dependencias con autowiring y detección de
-    dependencias circulares.
-  - **DTOs autovalidados** (`HexaLite\Http\DTO\Dtos`) con 20 atributos de
-    validación declarativa y un `RuleEngine` compartido.
-  - **Request / Response / Body / Params** para HTTP síncrono (PHP-FPM).
-  - **Validación** nativa estilo Laravel vía `$request->validate()`.
-  - **Guards** y **Middlewares** por atributos, con soporte de throttling.
-  - **Logging** PSR-3 (`LoggerFactory` + `SimpleLogger`, Monolog opcional).
-  - **PDODatabase** para MySQL/PostgreSQL con prepared statements reales.
-- `Router::registerExceptionHandler()` para mapear excepciones de terceros
-  (p. ej. de una librería JWT) a respuestas HTTP sin acoplar el core.
-- Helpers globales agnósticos (`response()`, `env()`, `loadEnv()`, `url()`).
-- Suite de pruebas PHPUnit, workflow de CI (GitHub Actions) y ejemplo ejecutable.
-
-### Changed
-- El `Container` ya **no depende de la extensión PECL `ext-ds`**: la detección de
-  ciclos usa un array nativo. El framework se instala sin extensiones PECL.
-- `LoggerFactory::create()` recibe el directorio de logs por parámetro en vez de
-  depender de una constante global de la aplicación.
-
-### Removed
-- Acoplamientos a la aplicación de origen:
-  - `Request` ya no importa los servicios de token/JWT de la app. La
-    autenticación se resuelve en un middleware que publica `$request->user()`.
-  - El `Router` ya no referencia `Firebase\JWT\*`; usa el hook de excepciones.
-  - Se eliminaron helpers de negocio (formato de moneda/fecha localizados, etc.)
-    y las constantes de rutas específicas de la app (`PATH_VAR`, …).
-
-[Unreleased]: https://github.com/jorge-koki/hexalite/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/jorge-koki/hexalite/releases/tag/v1.0.0
+[Unreleased]: https://github.com/jorge-koki/hexalite/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/jorge-koki/hexalite/releases/tag/v0.1.0
