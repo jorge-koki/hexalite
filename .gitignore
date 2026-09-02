@@ -1,0 +1,27 @@
+# Dependencias (una librería NO versiona su lockfile)
+/vendor/
+composer.lock
+
+# Caché y artefactos de PHPUnit
+.phpunit.cache/
+.phpunit.result.cache
+/build/
+/coverage/
+coverage.xml
+
+# Caché generado por el framework en runtime (rutas / contenedor)
+var/cache/
+*.cache
+
+# Entorno local
+.env
+.env.*
+!.env.example
+
+# Editores / SO
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+*:Zone.Identifier

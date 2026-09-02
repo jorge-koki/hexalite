@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+
+    # Motores reales para las pruebas de integración del kit de autenticación.
+    # Sin ellos esos tests se saltan solos, así que la suite sigue verde en
+    # cualquier máquina; aquí se levantan para que NO se salten en CI.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hx
+          POSTGRES_PASSWORD: hx
+          POSTGRES_DB: hxtest
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd "pg_isready -U hx"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: hx
+          MYSQL_DATABASE: hxtest
+        ports: ['53306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -uroot -phx"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+      redis:
+        image: redis:7-alpine
+        ports: ['56379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      HEXALITE_TEST_PGSQL_DSN: 'pgsql:host=127.0.0.1;port=55432;dbname=hxtest'
+      HEXALITE_TEST_PGSQL_USER: hx
+      HEXALITE_TEST_PGSQL_PASSWORD: hx
+      HEXALITE_TEST_MYSQL_DSN: 'mysql:host=127.0.0.1;port=53306;dbname=hxtest'
+      HEXALITE_TEST_MYSQL_USER: root
+      HEXALITE_TEST_MYSQL_PASSWORD: hx
+      HEXALITE_TEST_REDIS_HOST: 127.0.0.1
+      HEXALITE_TEST_REDIS_PORT: 56379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, json, pdo, pdo_pgsql, pdo_mysql, redis, openssl, curl
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ matrix.php }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Apply auth schema (PostgreSQL)
+        run: psql "postgresql://hx:hx@127.0.0.1:55432/hxtest" -v ON_ERROR_STOP=1 -f src/Auth/migrations/auth_pgsql.sql
+
+      - name: Apply auth schema (MySQL)
+        run: mysql -h 127.0.0.1 -P 53306 -uroot -phx hxtest < src/Auth/migrations/auth_mysql.sql
+
+      - name: Run test suite
+        run: composer test

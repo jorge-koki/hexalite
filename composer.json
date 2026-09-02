@@ -1,0 +1,78 @@
+{
+    "name": "hexalite/framework",
+    "description": "Micro-framework PHP moderno, síncrono y sin magia: enrutado por atributos, contenedor DI con autowiring, DTOs autovalidados y validación nativa. Pensado para PHP-FPM (arquitectura share-nothing).",
+    "type": "library",
+    "keywords": [
+        "framework",
+        "micro-framework",
+        "router",
+        "dependency-injection",
+        "container",
+        "attributes",
+        "dto",
+        "validation",
+        "middleware",
+        "hexagonal",
+        "php-fpm",
+        "auth",
+        "authentication",
+        "jwt",
+        "rbac"
+    ],
+    "homepage": "https://github.com/jorge-koki/hexalite",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "jorge-koki",
+            "email": "claude@larissamx.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/jorge-koki/hexalite/issues",
+        "source": "https://github.com/jorge-koki/hexalite"
+    },
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "psr/log": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5 || ^12.0 || ^13.0"
+    },
+    "suggest": {
+        "ext-pdo": "Necesaria para HexaLite\\Database (y por tanto para el kit de autenticación).",
+        "ext-pdo_pgsql": "Conexión a PostgreSQL (DB_CONNECTION=pgsql o variables PGSQL_*).",
+        "ext-pdo_mysql": "Conexión a MySQL/MariaDB (DB_CONNECTION=mysql o variables MYSQL_*).",
+        "ext-redis": "Caché y rate limiting compartidos entre workers. Alternativa sin extensión: predis/predis.",
+        "predis/predis": "Cliente Redis en PHP puro, si no puedes instalar ext-redis.",
+        "ext-sodium": "Cifrado de secretos en reposo con HexaLite\\Security\\EncryptionService (viene con PHP desde 7.2).",
+        "ext-openssl": "Solo para «Continuar con Google»: verifica la firma RS256 del ID token.",
+        "ext-curl": "Acelera las llamadas salientes (Resend, Google, reCAPTCHA). Sin ella se usan streams.",
+        "monolog/monolog": "Logging estructurado vía HexaLite\\Logging\\LoggerFactory. Si no está, se usa el SimpleLogger incluido (sin dependencias)."
+    },
+    "autoload": {
+        "psr-4": {
+            "HexaLite\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HexaLite\\Tests\\": "tests/",
+            "HexaLite\\Examples\\": "examples/src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-text"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

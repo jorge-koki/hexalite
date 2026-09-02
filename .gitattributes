@@ -1,0 +1,14 @@
+# Normalización de finales de línea
+* text=auto eol=lf
+
+# Archivos que NO deben incluirse en el tarball de distribución de Composer
+# (`composer require` descarga un paquete liviano; el código de src/ y los docs
+# principales sí se conservan).
+/.github          export-ignore
+/examples         export-ignore
+/tests            export-ignore
+/.editorconfig    export-ignore
+/.gitattributes   export-ignore
+/.gitignore       export-ignore
+/phpunit.xml      export-ignore
+/CONTRIBUTING.md  export-ignore
