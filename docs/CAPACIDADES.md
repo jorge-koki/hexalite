@@ -4,7 +4,8 @@ Referencia completa de las capacidades del framework: qué trae, cómo se usa ca
 pieza y —lo que suele faltar en un README— **dónde está el límite de cada una**.
 
 El [README](../README.md) es la introducción; esto es el catálogo. Para el
-contrato del cliente HTTP, ve a [FRONTEND.md](FRONTEND.md).
+contrato del cliente HTTP, ve a [FRONTEND.md](FRONTEND.md); para las firmas
+exactas de cada clase, a la [referencia de API](api/README.md).
 
 ---
 

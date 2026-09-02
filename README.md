@@ -517,6 +517,8 @@ el kit de autenticación completo.
 - [`docs/CAPACIDADES.md`](docs/CAPACIDADES.md) — catálogo completo: qué hace cada
   pieza, el ciclo de una petición, todas las reglas de validación y **dónde está
   el límite de cada capacidad**.
+- [`docs/api/`](docs/api/README.md) — **referencia de API**: las 105 clases una por
+  una, con constructores, métodos públicos, parámetros, retornos y excepciones.
 - [`docs/FRONTEND.md`](docs/FRONTEND.md) — contrato para el cliente: cookies,
   CSRF, endpoints, códigos de error y un cliente JS copiable.
 - [`.env.example`](.env.example) — todas las variables, con qué activa cada una.
