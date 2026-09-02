@@ -509,8 +509,10 @@ mi-app/
 El framework vive en `vendor/hexalite/framework` (namespace `HexaLite\`); tú solo
 escribes tu aplicación.
 
-Hay dos ejemplos ejecutables en [`examples/`](examples/): una mini-API y otro con
-el kit de autenticación completo.
+Hay tres ejemplos ejecutables en [`examples/`](examples/): una mini-API, otro con
+el kit de autenticación completo y un tercero que arma un **módulo con
+arquitectura hexagonal** —dominio, casos de uso y tres adaptadores de
+persistencia intercambiables— para enseñar cómo estructurar una app de verdad.
 
 ## 📚 Documentación
 
@@ -524,8 +526,9 @@ el kit de autenticación completo.
 - [`.env.example`](.env.example) — todas las variables, con qué activa cada una.
 - [`src/Auth/migrations/`](src/Auth/migrations/) — esquema SQL para PostgreSQL y
   MySQL, más `seed_user_pgsql.sql` para arrancar con un administrador creado.
-- [`examples/`](examples/) — dos apps ejecutables: la mini-API y el kit de auth
-  con rutas protegidas por rol y permiso.
+- [`examples/`](examples/) — tres apps ejecutables: la mini-API, el kit de auth
+  con rutas protegidas por rol y permiso, y el ejemplo de arquitectura
+  hexagonal por módulos (`examples/public/hexagonal.php`).
 
 ## 📄 Licencia
 

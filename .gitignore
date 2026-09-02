@@ -25,3 +25,6 @@ var/cache/
 .DS_Store
 Thumbs.db
 *:Zone.Identifier
+
+# Datos del ejemplo hexagonal (adaptador de fichero)
+examples/var/*.json

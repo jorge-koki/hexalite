@@ -118,13 +118,101 @@ El contrato para el frontend está en [`../docs/FRONTEND.md`](../docs/FRONTEND.m
 y el catálogo completo del framework en
 [`../docs/CAPACIDADES.md`](../docs/CAPACIDADES.md).
 
+## Ejemplo de arquitectura hexagonal
+
+`public/hexagonal.php` levanta un **módulo completo** —`src/Modules/Informes/`—
+organizado por capas, al estilo de una aplicación real. No necesita base de
+datos: por defecto guarda en un fichero JSON.
+
+```bash
+php -S localhost:8000 -t examples/public examples/public/hexagonal.php
+```
+
+```bash
+curl localhost:8000/informes?id_proyecto=1
+
+# Crear (DTO válido)
+curl -X POST localhost:8000/informes -H 'Content-Type: application/json' \
+     -d '{"titulo":"Informe anual de seguridad","id_proyecto":1}'   # → 201
+
+# Título demasiado corto: lo para el DTO, no llega al dominio
+curl -X POST localhost:8000/informes -H 'Content-Type: application/json' \
+     -d '{"titulo":"no","id_proyecto":1}'                           # → 422
+
+# Regla de negocio: se publica una vez, y solo una
+curl -X POST localhost:8000/informes/1/publicar                     # → 200
+curl -X POST localhost:8000/informes/1/publicar                     # → 409
+curl -X POST localhost:8000/informes/999/publicar                   # → 404
+```
+
+Para empezar de cero: `rm examples/var/informes.json`.
+
+### Qué enseña, capa por capa
+
+| Capa | Qué vive ahí | Qué NO puede aparecer |
+| --- | --- | --- |
+| `Domain/` | La entidad `Informe` y sus reglas (`publicar()`), el enum de estados, las excepciones del negocio y el **puerto** `InformeRepositoryInterface`. | SQL, `Request`, `Response`, atributos de validación HTTP. Ni un `use` que apunte a `Infrastructure`. |
+| `Application/` | Casos de uso (`CrearInforme`, `ListarInformes`, `PublicarInforme`) que orquestan, y el DTO que valida la forma de la entrada. | Reglas de negocio (van en la entidad) y detalles de HTTP. |
+| `Infrastructure/` | Adaptadores: el controlador de entrada y **tres** de salida —memoria, fichero JSON y PDO—. | Reglas de negocio. Solo traduce. |
+
+La dirección de las dependencias es la clave: `Infrastructure` conoce a `Domain`,
+y **nunca al revés**. Por eso los tres adaptadores son intercambiables sin tocar
+una coma del negocio, y por eso el driver se elige en una sola línea:
+
+```bash
+INFORMES_DRIVER=memoria  php -S localhost:8000 -t examples/public examples/public/hexagonal.php
+INFORMES_DRIVER=fichero  # por defecto
+INFORMES_DRIVER=pdo      # con DB_HOST, DB_NAME, DB_USER, DB_PASSWORD definidas
+```
+
+Con `pdo`, aplica antes el esquema del módulo:
+
+```bash
+psql "$DATABASE_URL" -f examples/src/Modules/Informes/Infrastructure/Persistence/migrations/informes_pgsql.sql
+# mysql -u user -p base < examples/src/Modules/Informes/Infrastructure/Persistence/migrations/informes_mysql.sql
+```
+
+> `memoria` y `fichero` **no son para producción**: PHP-FPM es share-nothing, así
+> que el repositorio en memoria nace vacío en cada petición, y el de fichero
+> bloquea el fichero entero en cada escritura.
+
+### La prueba de que el esfuerzo vale
+
+`tests/Examples/InformesHexagonalTest.php` ejercita todas las reglas del negocio
+**sin base de datos, sin servidor web y sin un solo mock**: basta sustituir el
+adaptador de persistencia por el de memoria, porque los dos cumplen el mismo
+puerto.
+
+```bash
+vendor/bin/phpunit --filter InformesHexagonalTest --testdox
+```
+
+Seis pruebas en milisegundos. Ese es el pago de haber puesto las dependencias
+mirando hacia adentro.
+
+### Llevarlo a tu proyecto
+
+En el ejemplo, el módulo cuelga de `HexaLite\Examples\Modules\` para no tocar el
+`composer.json` del paquete. En una aplicación de verdad le darías su propia raíz
+PSR-4:
+
+```json
+"autoload": {
+    "psr-4": { "Modules\\": "modules/" }
+}
+```
+
+y cada módulo (`modules/Informes/`, `modules/Facturas/`…) repetiría la misma
+estructura de tres capas, con su propio provider.
+
 ## Estructura
 
 ```
 examples/
 ├── public/
 │   ├── index.php                 # front controller del ejemplo básico
-│   └── auth.php                  # front controller con el kit de autenticación
+│   ├── auth.php                  # front controller con el kit de autenticación
+│   └── hexagonal.php             # front controller del ejemplo hexagonal
 └── src/
     ├── Controllers/
     │   ├── HelloController.php    # rutas simples + parámetro {name}
@@ -132,5 +220,23 @@ examples/
     │   └── AdminController.php    # rutas protegidas: rol, permisos, throttle
     ├── Dtos/CreateUserDto.php     # reglas por atributos
     ├── Middlewares/RequestIdMiddleware.php
-    └── Services/UserRepository.php
+    ├── Services/UserRepository.php
+    └── Modules/Informes/          # ── arquitectura hexagonal por módulo ──
+        ├── InformesServiceProvider.php        # cablea puerto → adaptador
+        ├── Domain/
+        │   ├── Informe.php                    # entidad + reglas de negocio
+        │   ├── EstadoInforme.php
+        │   ├── Exceptions/
+        │   └── Interfaces/
+        │       └── InformeRepositoryInterface.php   # ← el PUERTO
+        ├── Application/
+        │   ├── Dtos/CrearInformeDto.php
+        │   └── UseCases/                      # CrearInforme, ListarInformes, PublicarInforme
+        └── Infrastructure/
+            ├── Http/Controllers/InformeController.php    # adaptador de entrada
+            └── Persistence/                              # adaptadores de salida
+                ├── InMemoryInformeRepository.php
+                ├── JsonFileInformeRepository.php
+                ├── PdoInformeRepository.php
+                └── migrations/
 ```
