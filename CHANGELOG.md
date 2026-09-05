@@ -7,6 +7,51 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-04
+
+Mejora de rendimiento en los archivos de caché que genera el framework. Sin
+cambios incompatibles: actualizar desde 0.1.0 no exige tocar código.
+
+### Changed
+
+- Los cachés del **Router** (rutas compiladas) y del **Container** (metadata de
+  constructores) se escriben ahora en **una sola línea** en vez de con el formato
+  multilínea de `var_export()`. Medido sobre una tabla de 200 rutas: el archivo
+  pasa de 265 KB y ~11.000 líneas a 115 KB y una línea (**56 % menos**), y se
+  carga un **27 % más rápido sin OPcache** y un **21 % con OPcache caliente**.
+  De esa mejora, unos 17 puntos vienen de quitar espacios y saltos, y el resto de
+  omitir las claves redundantes de las listas.
+
+  El archivo generado sigue siendo código PHP normal: `require` lo carga igual y
+  OPcache lo compila igual. No es un formato propio.
+
+### Added
+
+- `HexaLite\Support\PhpExporter`, el exportador que sustituye a `var_export()`
+  para esos cachés. Está marcado `@internal`: es un detalle de implementación y
+  no forma parte de la API estable. Trata con cuidado los casos que rompen un
+  archivo que va a ejecutarse — `PHP_INT_MIN` se emite como resta (como literal
+  el parser lo convertiría en `float`), los caracteres de control van escapados
+  como `\xNN`, y un valor no exportable lanza, de modo que ante un fallo el
+  resultado es quedarse sin caché en vez de escribir uno que reventaría al
+  hacerle `require`.
+
+### Al actualizar
+
+**Borra los cachés existentes para que se regeneren.** En producción, el Router
+carga el archivo de caché si existe y nunca lo reescribe, así que un `routes.php`
+generado con 0.1.0 seguirá en el formato antiguo indefinidamente. No se rompe
+nada —el formato viejo es PHP válido y se carga sin problema—, simplemente no se
+nota la mejora:
+
+```sh
+rm -f var/cache/routes.php var/cache/container.php
+```
+
+Ajusta la ruta a la que pases como `cacheFile` al construir el `Router` y el
+`Container`. El caché del contenedor solo reaparece cuando este resuelve por
+autowiring alguna clase que no estuviera ya cacheada.
+
 ## [0.1.0] - 2026-09-02
 
 Primera versión publicada de HexaLite como paquete independiente, extraída y
@@ -132,5 +177,6 @@ ignoraba, y el registro en el log de todas las `HttpException` en vez de solo la
 antes de que hubiera nada publicado. Forman parte de esta primera entrega y no
 corrigen ninguna versión anterior, porque no la hay.
 
-[Unreleased]: https://github.com/jorge-koki/hexalite/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jorge-koki/hexalite/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/jorge-koki/hexalite/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jorge-koki/hexalite/releases/tag/v0.1.0
