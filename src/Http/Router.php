@@ -12,6 +12,7 @@ use HexaLite\Container\Container;
 use HexaLite\Http\Domain\GuardInterface;
 use HexaLite\Attributes\TimeAlwaysExecuted;
 use HexaLite\Http\DTO\Dtos;
+use HexaLite\Support\PhpExporter;
 use Throwable;
 
 class Router
@@ -360,8 +361,10 @@ class Router
             if (!is_dir($dir)) {
                 mkdir($dir, 0777, true);
             }
-            // Exportar como PHP nativo para aprovechar OPcache (0 I/O en loads siguientes)
-            $content = "<?php\n\nreturn " . var_export($this->routes, true) . ";\n";
+            // Exportar como PHP nativo para aprovechar OPcache (0 I/O en loads siguientes).
+            // En UNA línea (ver PhpExporter): var_export() gasta una línea por elemento
+            // y una tabla de rutas real acaba siendo un archivo enorme para nada.
+            $content = "<?php\n\nreturn " . PhpExporter::export($this->routes) . ";\n";
 
             // Escritura ATÓMICA: tmp único + rename. rename() es atómico en el mismo
             // filesystem, así que un worker concurrente que haga `require` del caché

@@ -6,6 +6,7 @@ use ReflectionClass;
 use ReflectionNamedType;
 use InvalidArgumentException;
 use HexaLite\Attributes\Inject;
+use HexaLite\Support\PhpExporter;
 
 class Container
 {
@@ -317,7 +318,8 @@ class Container
                 'bindings'     => $this->bindings,
             ];
 
-            $content = "<?php\n\nreturn " . var_export($exportData, true) . ";\n";
+            // En UNA línea (ver PhpExporter): var_export() gasta una línea por elemento.
+            $content = "<?php\n\nreturn " . PhpExporter::export($exportData) . ";\n";
 
             // Escritura ATÓMICA: tmp único + rename (atómico en el mismo filesystem).
             // Evita que otro worker FPM haga `require` de un caché a medio escribir

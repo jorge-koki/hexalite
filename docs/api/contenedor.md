@@ -2,7 +2,7 @@
 
 [← Índice de la referencia](README.md)
 
-- [`Container`](#container) · [`#[Inject]`](#inject) · [`ProviderInterface`](#providerinterface) · [Excepciones](#excepciones)
+- [`Container`](#container) · [`#[Inject]`](#inject) · [`ProviderInterface`](#providerinterface) · [Excepciones](#excepciones) · [`PhpExporter`](#phpexporter)
 
 ---
 
@@ -75,8 +75,48 @@ cual es necesario de verdad: varios workers de FPM pueden guardar a la vez desde
 destructor, y un `require` de un fichero a medio escribir sería un error fatal de
 parseo. Tras el `rename` se invalida la entrada de OPcache.
 
+El array se serializa con [`PhpExporter`](#phpexporter), **en una sola línea**.
+
 Los fallos de caché se registran en `error_log` y no interrumpen la petición: si el
 caché no se puede leer, se vuelve a escanear.
+
+---
+
+## PhpExporter
+
+`HexaLite\Support\PhpExporter` — `src/Support/PhpExporter.php` · `final`
+
+> **Interno.** Detalle de implementación del caché; no forma parte de la API estable.
+
+```php
+static export(mixed $value): string
+```
+
+Exporta un valor como código PHP válido **en una sola línea**. Es el reemplazo de
+`var_export()` para los archivos de caché que el framework genera y luego carga con
+`require` — las rutas compiladas del [`Router`](http.md#router) y la metadata del
+[`Container`](#container).
+
+`var_export()` gasta una línea por elemento: una tabla de 200 rutas ocupa unas 11.000
+líneas y 265 KB para un array que se reconstruye idéntico escrito de corrido. Medido
+sobre esa misma tabla, la salida en una línea ocupa **un 56 % menos** y se carga entre
+un **17 % y un 30 % más rápido** según haya OPcache o no.
+
+El resultado es código PHP normal: `require` lo carga igual que antes y OPcache lo
+compila igual. No es un formato propio.
+
+| Tipo | Cómo se exporta |
+|---|---|
+| `array` | `[...]`. **En una lista las claves se omiten** — PHP las regenera idénticas y el archivo pesa menos. |
+| `string` | Comillas simples; con caracteres de control, comillas dobles con escapes `\xNN` para no partir la línea. |
+| `int` | Literal. `PHP_INT_MIN` se emite como resta, porque como literal el parser lo convertiría en `float`. |
+| `float` | Vía `var_export()`, que garantiza el viaje de ida y vuelta exacto. |
+| `bool`, `null` | `true` / `false` / `NULL`. |
+| Cualquier otra cosa | Lanza `InvalidArgumentException`. |
+
+Lanzar con objetos, recursos o *closures* es deliberado: ambos `saveCache()` capturan
+la excepción y registran el fallo, así que **el resultado es quedarse sin caché en vez
+de escribir uno que reventaría al hacerle `require`**.
 
 ---
 

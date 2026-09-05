@@ -343,7 +343,9 @@ también se resuelven en una sola pasada. Las partes literales del path se escap
 de modo que `/v1.0/{id}` no casa con `/vX0/5`.
 
 En producción el resultado se serializa a un array PHP nativo que se carga con
-`require` — lo sirve OPcache, con cero E/S.
+`require` — lo sirve OPcache, con cero E/S. La serialización usa
+[`PhpExporter`](contenedor.md#phpexporter), que lo escribe **en una sola línea**: un
+archivo bastante más pequeño y de carga más rápida que el de `var_export()`.
 
 ### Introspección
 

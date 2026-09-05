@@ -19,7 +19,7 @@ Todas las clases viven bajo el namespace `HexaLite\`, mapeado por PSR-4 a `src/`
 |---|---|
 | [`http.md`](http.md) | `Request`, `Response`, `Router`, `Body`, `Params`, excepciones HTTP, interfaces de middleware y guard, CORS, atributos de ruta y helpers globales |
 | [`dto-validacion.md`](dto-validacion.md) | `Dtos`, los 18 atributos de validación, `RuleEngine`, `Validator` y el contrato `CustomValidator` |
-| [`contenedor.md`](contenedor.md) | `Container`, sus excepciones, el atributo `#[Inject]` y `ProviderInterface` |
+| [`contenedor.md`](contenedor.md) | `Container`, sus excepciones, el atributo `#[Inject]`, `ProviderInterface` y `PhpExporter` |
 | [`base-de-datos.md`](base-de-datos.md) | `DatabaseManager`, `DatabaseInterface`, `PDODatabase`, `QueryResult` |
 | [`cache.md`](cache.md) | `CacheInterface`, `CacheFactory`, `RedisCache`, `ArrayCache` |
 | [`correo.md`](correo.md) | `MailerInterface`, `MailerFactory`, `SmtpMailer`, `ResendMailer`, `LogMailer` |
@@ -101,6 +101,7 @@ Todas las clases viven bajo el namespace `HexaLite\`, mapeado por PSR-4 a `src/`
 | `Providers\ProviderInterface` | interfaz | [contenedor](contenedor.md#providerinterface) |
 | `ResponseFactory` | clase | [http](http.md#responsefactory) |
 | `Security\EncryptionService` | clase | [logging-seguridad](logging-seguridad.md#encryptionservice) |
+| `Support\PhpExporter` | clase *(interna)* | [contenedor](contenedor.md#phpexporter) |
 | `Validation\RuleEngine` | clase | [dto-validacion](dto-validacion.md#ruleengine) |
 | `Validation\Validator` | clase | [dto-validacion](dto-validacion.md#validator) |
 
